@@ -45,9 +45,9 @@ $(function(){
 
 	var placedItems = [];
 
-	var itemTimingMS = 3000;
+	var itemTimingMS = 5000;
 	var maxStackSize = 30;
-	var maxPlacedItems = 10;
+	var maxPlacedItems = 20;
 	var stackTimingMS = itemTimingMS * maxStackSize;
 
 	var searchTerms = ["metmuseum","metmedialab"];
@@ -139,7 +139,7 @@ $(function(){
 			if(status.entities && status.entities.media){
 				item.imgUrl = status.entities.media[0].media_url;
 			}
-			itemStacks[term +"__tw"].push(item);
+			itemStacks[term +"__tw"].unshift(item);
 			if(itemStacks[term +"__tw"] > maxStackSize){
 				itemStacks[term +"__tw"].pop();
 			}
@@ -154,7 +154,7 @@ $(function(){
 				imgUrl : status.images.low_resolution.url,
 				user : status.user.username
 			}
-			itemStacks[term +"__ig"].push(item);
+			itemStacks[term +"__ig"].unshift(item);
 			if(itemStacks[term +"__ig"] > maxStackSize){
 				itemStacks[term +"__ig"].pop();
 			}
@@ -192,8 +192,11 @@ $(function(){
 		placeItem(item);
 
 		if(placedItems.length > maxPlacedItems){
+			console.log("removing");
 			removeItem = placedItems.pop();
+			console.log(removeItem);
 			msnry.remove(removeItem);
+			$(removeItem).remove();
 		}
 	}
 
@@ -223,7 +226,7 @@ $(function(){
 	//	  msnry.layout();
 		});		
 
-		placedItems.push(item);
+		placedItems.unshift(item);
 //msnry.appended(item);
 	}
 
