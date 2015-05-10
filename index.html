@@ -1,0 +1,144 @@
+<html>
+<head>
+<title>Social Feed Crawler</title>
+
+<script src="js/masonry.pkgd.min.js"></script>
+<script src="js/imagesloaded.pkgd.min.js"></script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+<script type="text/javascript">
+
+var msnry;
+
+$(window).load( function() {
+
+var container = document.querySelector('#container');
+msnry = new Masonry( container, {
+  // options
+        itemSelector: ".item",
+        columnWidth: ".grid-sizer",
+    });
+/*
+    msnry = $('#container').masonry({
+        "itemSelector": ".item",
+        "columnWidth": ".grid-sizer",
+    });
+*/
+});
+
+
+$(function(){
+
+//	$("grid-sizer").hide();
+
+	console.log("ready");
+	var container = document.querySelector('#container');
+
+	var first = true;
+
+	var newItem = function(callback){
+		var rand = Math.random();
+		var height = Math.floor((Math.random() * 500 ) + 50);
+		var width = Math.floor((Math.random() * 500 ) + 50);
+		var imgUrl = "http://placekitten.com/g/"+width+"/"+height;
+		console.log(imgUrl);
+		console.log(rand);
+		var item_class="";
+		if(rand >= .5){
+			item_class="w2";
+		}
+		var sizer_class= "item";
+
+		if(first){
+			//sizer_class = "grid-sizer";
+			first = false;
+		}
+		item = $("<div class='"+sizer_class+" "+item_class+"'><img width='100%' src='"+imgUrl+"'/><span class='caption'>kitty kat!</span></div>").hide();
+		$("#container").append(item);
+		imagesLoaded(item, function() {
+			console.log("image loaded");
+			item.show();
+			msnry.appended(item);
+	//	  msnry.layout();
+		});		
+//msnry.appended(item);
+		if(callback){
+			callback();
+		}
+		//setTimeout(newItem, 1000);
+	}
+
+	newItem();
+
+});
+</script>
+<style type="text/css">
+
+html {
+    overflow-y: scroll;
+}
+
+.grid-sizer { width: 20%; }
+.item { width: 20%; }
+
+@media screen and (max-width: 1224px) {
+  .grid-sizer { width: 33.33%; }
+  .item { width: 33.33%; }
+}
+
+@media screen and (max-width: 720px) {
+  .grid-sizer { width: 50%; }
+  .item { width: 50%; }
+}
+
+@media screen and (max-width: 480px) {
+  .grid-sizer { width: 100%; }
+  .item { width: 100%; }
+}
+
+.overlay {
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    position: absolute;
+    top: 0;
+    left: 0;
+    text-decoration: none;
+    color: #fff;
+    display: none;
+}
+
+.overlay .title {
+    text-align: center;
+    font-size: 30px;
+}
+
+.overlay .description {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    background-color: rgba(0,0,0,0.80);
+    width: 100%;
+    margin: 0;
+}
+
+.overlay .description p {
+    margin: 20px;
+}
+
+.item:hover .overlay {
+    display: block;
+}
+
+</style>
+</head>
+<body>
+	<div class="masonry js-masonry" id="container">
+		<div class="grid-sizer"></div>
+		<!--
+		<div class='item'><img width=100%  src='http://images2.fanpop.com/image/photos/10900000/cat-random-10941617-450-442.jpg'/></div>
+		<div class='item'><img width=100%  src='http://images2.fanpop.com/image/photos/10900000/cat-random-10941617-450-442.jpg'/></div>
+-->
+	</div>
+</body>
+
+</html>
