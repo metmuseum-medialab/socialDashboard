@@ -5,9 +5,14 @@
 <script src="js/masonry.pkgd.min.js"></script>
 <script src="js/imagesloaded.pkgd.min.js"></script>
 <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+<script src="js/jquery.linkify-1.0-min.js"></script>
+<script src="js/jquery.linkify-1.0-twitter-min.js"></script>
 <script type="text/javascript">
 
 var msnry;
+
+
+
 
 $(window).load( function() {
 
@@ -16,6 +21,7 @@ msnry = new Masonry( container, {
   // options
         itemSelector: ".item",
         columnWidth: ".grid-sizer",
+        gutter: 5
     });
 /*
     msnry = $('#container').masonry({
@@ -26,59 +32,254 @@ msnry = new Masonry( container, {
 });
 
 
+
 $(function(){
 
 //	$("grid-sizer").hide();
+	var itemStacks = {};
+	var lastIDs = {};
+	var twitterItemStack = [];
+	var lastTwitterID = "0";
+	var instagramItemStack = [];
+	var lastInstagramID = "0";
 
+	var placedItems = [];
+
+	var itemTimingMS = 3000;
+	var maxStackSize = 30;
+	var maxPlacedItems = 10;
+	var stackTimingMS = itemTimingMS * maxStackSize;
+
+	var searchTerms = ["metmuseum","metmedialab"];
+
+	$.each(searchTerms, function(index, term){
+		itemStacks[term + "__ig"] = [];
+		itemStacks[term + "__tw"] = [];
+	})
+
+	var prefData = {};
 	console.log("ready");
 	var container = document.querySelector('#container');
 
 	var first = true;
 
-	var newItem = function(callback){
-		var rand = Math.random();
-		var height = Math.floor((Math.random() * 500 ) + 50);
-		var width = Math.floor((Math.random() * 500 ) + 50);
-		var imgUrl = "http://placekitten.com/g/"+width+"/"+height;
-		console.log(imgUrl);
-		console.log(rand);
-		var item_class="";
-		if(rand >= .5){
-			item_class="w2";
-		}
-		var sizer_class= "item";
+	var getStack = function(){
+		getNewTwitterStack();
+		getNewInstagramStack();
+	}
 
+	var getNewTwitterStack = function(){
+		$.each(searchTerms, function(index, term){
+			var url = "/?action=searchTwitter";
+			$.ajax({
+				url : url ,
+				data : {searchTerms: term, sinceId: 0, prefs: prefData},
+				//type : "PUT",
+				contentType : 'json',
+				// processData : false,
+				success : function(results, status){
+				  console.log("got tiwtter results");
+				  var results = JSON.parse(results);
+				  console.log(results);
+				  lastTwitterID = results.results.search_metadata.max_id_str;
+				  processTwitterStack(term, results);
+
+				},
+
+				error : function(jqXHR, status, message){
+				  console.log("getStack ajax error ");
+				  console.log(status);
+				  console.log(message);
+				}
+	        }); 
+        });  
+
+	}
+
+	var getNewInstagramStack = function(){
+		$.each(searchTerms, function(index, term){
+
+			var url = "/?action=searchInstagramTag";
+			$.ajax({
+				url : url ,
+				data : {tag: term, sinceId: 0, prefs: prefData},
+				//type : "PUT",
+				contentType : 'json',
+				// processData : false,
+				success : function(results, status){
+				  console.log("got IG results");
+				  var results = JSON.parse(results);
+				  console.log(results);
+	//			  lastTwitterID = results.results.search_metadata.max_id_str;
+				  processInstagramStack(term, results);
+
+				},
+
+				error : function(jqXHR, status, message){
+				  console.log("getStack ajax error ");
+				  console.log(status);
+				  console.log(message);
+				}
+	        });   
+	    });
+
+	}
+
+
+	var processTwitterStack = function(term, stackArray){
+		$.each(stackArray.results.statuses, function(index, status){
+		//	console.log(status);
+			var item = {
+				text : status.text,
+				id : status.id_str,
+				source : "twitter",
+				imgUrl : false,
+				user : status.user.name
+			}
+			if(status.entities && status.entities.media){
+				item.imgUrl = status.entities.media[0].media_url;
+			}
+			itemStacks[term +"__tw"].push(item);
+			if(itemStacks[term +"__tw"] > maxStackSize){
+				itemStacks[term +"__tw"].pop();
+			}
+		});
+	}
+	var processInstagramStack = function(term, stackArray){
+		$.each(stackArray.results, function(index, status){
+			var item = {
+				text : status.caption.text,
+				id : status.id,
+				source : "instagram",
+				imgUrl : status.images.low_resolution.url,
+				user : status.user.username
+			}
+			itemStacks[term +"__ig"].push(item);
+			if(itemStacks[term +"__ig"] > maxStackSize){
+				itemStacks[term +"__ig"].pop();
+			}
+		});
+	}
+
+	var iterator = 0;
+	var loadNewItem = function(){
+		// get item from top of array, show it, the put at the bottom if the array is > maxSize
+		iterator++;
+		iterator = iterator % 4;
+
+		var keys = Object.keys(itemStacks);
+		var key = keys[iterator];
+		var stack = itemStacks[key];
+
+		if(stack){
+			loadNewItemFromStack(key, stack);
+		}else{
+			console.log("no stack for key " + key);
+		}
+	}
+
+	var loadNewItemFromStack = function(key, stack){
+		if(stack.length > 0){
+			var item = stack.shift();
+			addNewItem(item);
+			if(stack.length < maxStackSize){
+				stack.push(item);
+			}			
+		}
+	}
+
+	var addNewItem = function(item){
+		placeItem(item);
+
+		if(placedItems.length > maxPlacedItems){
+			removeItem = placedItems.pop();
+			msnry.remove(removeItem);
+		}
+	}
+
+	var placeItem = function(item){
+
+		var imgUrl = false;
+		var imgString = "";
+		if(item.imgUrl){
+			imgUrl = item.imgUrl;
+			imgString = "<img width='100%' src='"+imgUrl+"'/>";
+		}
+		console.log(item);
+		var text = item.text;
+		var item_class="";
+		var sizer_class= "item";
 		if(first){
 			//sizer_class = "grid-sizer";
 			first = false;
 		}
-		item = $("<div class='"+sizer_class+" "+item_class+"'><img width='100%' src='"+imgUrl+"'/><span class='caption'>kitty kat!</span></div>").hide();
-		$("#container").append(item);
+		item = $("<div class='"+sizer_class+" "+item_class+"'>"+imgString+"<span class='caption'>"+text+"</span>&nbsp;<span class='metadata'>"+item.source+": "+ item.user+"</span></div>").hide();
+		$(".caption", item).linkify(function (links){ $(links).attr("target", "_blank"); });
+		$("#container").prepend(item);
 		imagesLoaded(item, function() {
 			console.log("image loaded");
 			item.show();
-			msnry.appended(item);
+			msnry.prepended(item);
 	//	  msnry.layout();
 		});		
+
+		placedItems.push(item);
 //msnry.appended(item);
-		if(callback){
-			callback();
-		}
-		//setTimeout(newItem, 1000);
 	}
 
-	newItem();
+
+
+	var itemLoop = function(){
+		loadNewItem();
+		setTimeout(itemLoop, itemTimingMS);
+	}
+
+	var stackLoop = function(){
+		getStack();
+		setTimeout(stackLoop, stackTimingMS);
+	}
+
+	stackLoop();
+	itemLoop();
 
 });
 </script>
 <style type="text/css">
+
+
+* {
+  -webkit-box-sizing: border-box;
+     -moz-box-sizing: border-box;
+          box-sizing: border-box;
+}
+
+body {
+	background: #333;
+}
 
 html {
     overflow-y: scroll;
 }
 
 .grid-sizer { width: 20%; }
-.item { width: 20%; }
+.item { 
+	background: #886;
+	width: 20%; 
+    border: 2px solid;
+    border-radius: 25px;
+    padding: 10px;
+    margin-bottom: 5px;
+}
+
+.item .metadata {
+	color: white;
+	font-style: italic;
+}
+
+.item .caption {
+	font-family: sans-serif;
+}
+
 
 @media screen and (max-width: 1224px) {
   .grid-sizer { width: 33.33%; }
@@ -127,6 +328,11 @@ html {
 
 .item:hover .overlay {
     display: block;
+}
+
+a {
+	text-decoration: none;
+	color: purple;
 }
 
 </style>
