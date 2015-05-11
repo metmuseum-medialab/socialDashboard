@@ -63,7 +63,9 @@ function startServer(){
 
 function parseRequest(req, res){
 	var rand = Math.random() * 100;
-  res.setHeader("Access-Control-Allow-Headers", req.headers["access-control-request-headers"]);        
+	if(req.headers["access-control-request-headers"]){
+  		res.setHeader("Access-Control-Allow-Headers", req.headers["access-control-request-headers"]);        
+  	}
   res.setHeader("Access-Control-Allow-Origin", "*");        
 
   console.log("got request");
