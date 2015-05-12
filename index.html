@@ -127,8 +127,13 @@ $(function(){
 
 	var processTwitterStack = function(term, stackArray){
 		$.each(stackArray.results.statuses, function(index, status){
-		//	console.log(status);
+//			console.log(status);
+			var date = new Date(status.created_at);
+//			console.log(date);
+//			console.log(date.toDateString());
+
 			var item = {
+				time : date.toDateString(),
 				text : status.text,
 				id : status.id_str,
 				source : "twitter",
@@ -146,7 +151,9 @@ $(function(){
 	}
 	var processInstagramStack = function(term, stackArray){
 		$.each(stackArray.results, function(index, status){
+			var date = new Date(status.created_time * 1000);
 			var item = {
+				time : date.toDateString(),
 				text : status.caption.text,
 				id : status.id,
 				source : "instagram",
@@ -215,7 +222,7 @@ $(function(){
 			//sizer_class = "grid-sizer";
 			first = false;
 		}
-		item = $("<div class='"+sizer_class+" "+item_class+"'>"+imgString+"<span class='caption'>"+text+"</span>&nbsp;<span class='metadata'>"+item.source+": "+ item.user+"</span></div>").hide();
+		item = $("<div class='"+sizer_class+" "+item_class+"'>"+imgString+"<span class='caption'>"+text+"</span>&nbsp;<span class='metadata'>"+item.source+": "+ item.user+"</span>&nbsp;<span class='time'>"+item.time+"</span></div>").hide();
 		$(".caption", item).linkify(function (links){ $(links).attr("target", "_blank"); });
 		$("#container").prepend(item);
 		imagesLoaded(item, function() {
@@ -274,6 +281,12 @@ html {
 }
 
 .item .metadata {
+	color: white;
+	font-style: italic;
+}
+
+.item .time {
+	font-size: .8em;
 	color: white;
 	font-style: italic;
 }
