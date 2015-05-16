@@ -8,6 +8,8 @@
 <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
 <script src="js/jquery.linkify-1.0-min.js"></script>
 <script src="js/jquery.linkify-1.0-twitter-min.js"></script>
+<script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
+
 <script type="text/javascript">
 
 var msnry;
@@ -22,7 +24,7 @@ msnry = new Masonry( container, {
   // options
         itemSelector: ".item",
         columnWidth: ".grid-sizer",
-        gutter: 5
+        gutter: ".gutter-sizer"
     });
 /*
     msnry = $('#container').masonry({
@@ -71,7 +73,7 @@ $(function(){
 
 	var getNewTwitterStack = function(){
 		$.each(searchTerms, function(index, term){
-			var url = "/?action=searchTwitter";
+			var url = "?action=searchTwitter";
 			$.ajax({
 				url : url ,
 				data : {searchTerms: term, sinceId: 0, prefs: prefData},
@@ -99,7 +101,7 @@ $(function(){
 	var getNewInstagramStack = function(){
 		$.each(searchTerms, function(index, term){
 
-			var url = "/?action=searchInstagramTag";
+			var url = "?action=searchInstagramTag";
 			$.ajax({
 				url : url ,
 				data : {tag: term, sinceId: 0, prefs: prefData},
@@ -238,22 +240,68 @@ $(function(){
 	}
 
 
-
+	var itemLoopStopped = false;
 	var itemLoop = function(){
-		loadNewItem();
+		if(!itemLoopStopped){
+			loadNewItem();
+		}
 		setTimeout(itemLoop, itemTimingMS);
 	}
 
 	var stackLoop = function(){
-		getStack();
-		setTimeout(stackLoop, stackTimingMS);
+		if(!itemLoopStopped){
+			getStack();
+			setTimeout(stackLoop, stackTimingMS);
+		}
 	}
 
+	var setupMenu = function(){
+
+		$(".menuicon").click(function(evt){
+
+			var terms = searchTerms.join(", ");
+
+			itemLoopStopped = true;
+			var menu = $("<div class='item menu'><span class='menuheader'>enter comma-separated list of keywords for socal search:</span><form><textarea class='termsList' rows=5 cols=20>"+terms+"</textarea><BR><span class='menuclose'><i class='fa fa-check-circle' /></span></div>");
+			$("#container").prepend(menu);
+			msnry.prepended(menu);
+			$(".menuclose").click(function(evt){
+				var terms = $(".termsList").val();
+				terms = terms.split(",");
+				searchTerms = [];
+				$.each(terms, function(index, term){
+					searchTerms.push(term.trim());
+				});
+				itemStacks = {};
+				$.each(searchTerms, function(index, term){
+					itemStacks[term + "__ig"] = [];
+					itemStacks[term + "__tw"] = [];
+				});
+				console.log(searchTerms)
+				console.log(terms);
+				msnry.remove(menu);
+				$(menu).remove();
+				itemLoopStopped = false;
+				stackLoop();			
+			});
+
+		});
+
+	}
+
+
+
+	setupMenu();
 	stackLoop();
 	itemLoop();
 
+
+
 });
 </script>
+
+<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+
 <style type="text/css">
 
 
@@ -272,6 +320,7 @@ html {
 }
 
 .grid-sizer { width: 18%; }
+.gutter-sizer { width: 2%; }
 .item { 
 	background: #886;
 	width:18%; 
@@ -279,6 +328,24 @@ html {
     border-radius: 25px;
     padding: 10px;
     margin-bottom: 5px;
+}
+
+img {
+    border-radius: 20px;
+
+}
+
+.fa {
+	color: white;
+}
+
+.fa:hover{
+	color:green;
+}
+
+
+.fa-cog {
+	color: #333;
 }
 
 .item .metadata {
@@ -298,8 +365,9 @@ html {
 
 
 @media screen and (max-width: 1224px) {
-  .grid-sizer { width: 33.33%; }
-  .item { width: 33.33%; }
+  .gutter-sizer { width: 1%; }
+  .grid-sizer { width: 23%; }
+  .item { width: 23%; }
 }
 
 @media screen and (max-width: 720px) {
@@ -350,12 +418,24 @@ a {
 	text-decoration: none;
 	color: purple;
 }
+.menuicon {
+	position: relative;
+	left: -10px;
+	top: -10px;
+	margin-left: -8px;
+	margin-top: -8px;
+	width: 15px;
+}
+
 
 </style>
 </head>
 <body>
+
 	<div class="masonry js-masonry" id="container">
+		<div class="menuicon"><i class="fa fa-cog"></i></div>
 		<div class="grid-sizer"></div>
+		<div class="gutter-sizer"></div>
 		<!--
 		<div class='item'><img width=100%  src='http://images2.fanpop.com/image/photos/10900000/cat-random-10941617-450-442.jpg'/></div>
 		<div class='item'><img width=100%  src='http://images2.fanpop.com/image/photos/10900000/cat-random-10941617-450-442.jpg'/></div>
